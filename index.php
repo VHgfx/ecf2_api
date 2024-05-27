@@ -153,7 +153,7 @@ $app->post('/addManga', function (Request $request, Response $response) {
 });
 
 // Liste de tous les mangas
-$app->get('/manga/all', function (Request $request, Response $response) {
+$app->get('/manga/add', function (Request $request, Response $response) {
     require_once 'db.php';
     
     $query = 'SELECT * FROM `mangas`';
