@@ -112,7 +112,7 @@ $app->get('/profil', function (Request $request, Response $response) {
 
 
 // Ajout manga
-$app->post('/addManga', function (Request $request, Response $response) {
+$app->post('/manga/add', function (Request $request, Response $response) {
     $err = array();
     require_once 'db.php';
     $data = $request->getParsedBody();
@@ -153,16 +153,29 @@ $app->post('/addManga', function (Request $request, Response $response) {
 });
 
 // Liste de tous les mangas
-$app->get('/manga/add', function (Request $request, Response $response) {
+$app->get('/manga/all', function (Request $request, Response $response) {
     require_once 'db.php';
     
     $query = 'SELECT * FROM `mangas`';
     $queryexec = $database->prepare($query);
     $queryexec->execute();
-    $res = $queryexec->fetchAll();
+    $res = $queryexec->fetchAll(PDO::FETCH_ASSOC);
     $response->getBody()->write(json_encode(['valid' => 'ok', 'data' => $res]));
     return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
 });
+
+// Liste de toutes les catégories
+$app->get('/manga/categories', function (Request $request, Response $response) {
+    require_once 'db.php';
+    
+    $query = 'SELECT * FROM `categories`';
+    $queryexec = $database->prepare($query);
+    $queryexec->execute();
+    $res = $queryexec->fetchAll(PDO::FETCH_ASSOC);
+    $response->getBody()->write(json_encode(['valid' => 'ok', 'data' => $res]));
+    return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+});
+
 
 // Détails 1 manga
 $app->get('/manga/{manga_id}', function (Request $request, Response $response, $param) {
@@ -170,11 +183,14 @@ $app->get('/manga/{manga_id}', function (Request $request, Response $response, $
 
     $selectedManga = $param['manga_id'];
     
-    $query = 'SELECT * FROM `mangas` WHERE id = :id';
+    $query = 'SELECT mangas.*, categories.nom_categorie
+    FROM `mangas` 
+    JOIN categories ON mangas.id_categories = categories.id
+    WHERE mangas.id = :id';
     $queryexec = $database->prepare($query);
     $queryexec->bindValue(':id', $selectedManga, PDO::PARAM_INT);
     $queryexec->execute();
-    $res = $queryexec->fetch();
+    $res = $queryexec->fetch(PDO::FETCH_ASSOC);
     $response->getBody()->write(json_encode(['valid' => 'Infos du manga récupérées', 'data' => $res]));
     return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
 });
