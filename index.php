@@ -8,7 +8,7 @@ use Slim\Factory\AppFactory;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-require __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
 $app = AppFactory::create();
 $app->addBodyParsingMiddleware();
 
@@ -31,7 +31,7 @@ $authMiddleware = function($request,$handler)use ($key){
 
 $app->post('/addUser', function (Request $request, Response $response) {
     $err = array();
-    require 'db.php';
+    require_once 'db.php';
     $data = $request->getParsedBody();
 
 
@@ -74,7 +74,7 @@ $app->post('/addUser', function (Request $request, Response $response) {
 
 $app->post('/login', function (Request $request, Response $response)use ($key) {
     $data = $request->getParsedBody();
-    require 'db.php';
+    require_once 'db.php';
     $query = 'SELECT `id`,`password` FROM `users` WHERE `email` = ?';
     $queryexec = $database->prepare($query);
     $queryexec->bindValue(1, $data['email'] ,PDO::PARAM_STR);
@@ -99,7 +99,19 @@ $app->post('/login', function (Request $request, Response $response)use ($key) {
 });
 
 $app->get('/profil', function (Request $request, Response $response) {
-    require 'db.php';
+    require_once 'db.php';
+    $id = $request->getAttribute('id');
+    $query = 'SELECT * FROM `users` WHERE `id` = ?';
+    $queryexec = $database->prepare($query);
+    $queryexec->bindValue(1, $id ,PDO::PARAM_INT);
+    $queryexec->execute();
+    $res = $queryexec->fetchAll();
+    $response->getBody()->write(json_encode(['profil valid' => 'ok', 'data' => $res]));
+    return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+})->add($authMiddleware);
+
+$app->get('/addManga', function (Request $request, Response $response) {
+    require_once 'db.php';
     $id = $request->getAttribute('id');
     $query = 'SELECT * FROM `users` WHERE `id` = ?';
     $queryexec = $database->prepare($query);
