@@ -110,16 +110,89 @@ $app->get('/profil', function (Request $request, Response $response) {
     return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
 })->add($authMiddleware);
 
-$app->get('/addManga', function (Request $request, Response $response) {
+
+// Ajout manga
+$app->post('/addManga', function (Request $request, Response $response) {
+    $err = array();
     require_once 'db.php';
-    $id = $request->getAttribute('id');
-    $query = 'SELECT * FROM `users` WHERE `id` = ?';
+    $data = $request->getParsedBody();
+
+
+    if(empty($data['titre'])){
+    $err['titre'] = 'titre vide';
+    }
+    if(empty($data['auteur'])){
+        $err['auteur'] = 'auteur vide';
+    }
+    if(empty($data['id_categories'])){
+        $err['id_categories'] = 'id_categorie vide';
+    }
+    if(empty($data['resume'])){
+        $err['resume'] = 'résumé vide';
+    }
+
+    if(empty($err)){
+
+        
+        $query = 'INSERT INTO `mangas` (`titre`,`auteur`,`id_categories`,`resume`) VALUES(?,?,?,?)';
+        $queryexec = $database->prepare($query);
+        $queryexec->bindValue(1, $data['titre'] ,PDO::PARAM_STR);
+        $queryexec->bindValue(2, $data['auteur'] ,PDO::PARAM_STR);
+        $queryexec->bindValue(3, $data['id_categories'] ,PDO::PARAM_INT);
+        $queryexec->bindValue(4, $data['resume'] ,PDO::PARAM_STR);
+        $queryexec->execute();
+
+        $response->getBody()->write(json_encode(['valid' => 'manga inséré']));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+
+    }else{
+    $response->getBody()->write(json_encode(['erreur' => $err]));
+    return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+    }
+
+});
+
+// Liste de tous les mangas
+$app->get('/manga/all', function (Request $request, Response $response) {
+    require_once 'db.php';
+    
+    $query = 'SELECT * FROM `mangas`';
     $queryexec = $database->prepare($query);
-    $queryexec->bindValue(1, $id ,PDO::PARAM_INT);
     $queryexec->execute();
     $res = $queryexec->fetchAll();
-    $response->getBody()->write(json_encode(['profil valid' => 'ok', 'data' => $res]));
+    $response->getBody()->write(json_encode(['valid' => 'ok', 'data' => $res]));
     return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
-})->add($authMiddleware);
+});
+
+// Détails 1 manga
+$app->get('/manga/{manga_id}', function (Request $request, Response $response, $param) {
+    require_once 'db.php';
+
+    $selectedManga = $param['manga_id'];
+    
+    $query = 'SELECT * FROM `mangas` WHERE id = :id';
+    $queryexec = $database->prepare($query);
+    $queryexec->bindValue(':id', $selectedManga, PDO::PARAM_INT);
+    $queryexec->execute();
+    $res = $queryexec->fetch();
+    $response->getBody()->write(json_encode(['valid' => 'Infos du manga récupérées', 'data' => $res]));
+    return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+});
+
+// Liste de tous les mangas
+$app->delete('/manga/delete/{manga_id}', function (Request $request, Response $response, $param) {
+    require_once 'db.php';
+
+    $selectedManga = $param['manga_id'];
+    
+    $query = 'DELETE FROM `mangas` WHERE id = :id';
+    $queryexec = $database->prepare($query);
+    $queryexec->bindValue(':id', $selectedManga, PDO::PARAM_INT);
+    $queryexec->execute();
+    $res = $queryexec->fetchAll();
+    $response->getBody()->write(json_encode(['valid' => 'Manga supprimé']));
+    return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+});
+
 
 $app->run();
