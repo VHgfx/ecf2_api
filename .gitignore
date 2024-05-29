@@ -1,0 +1,3 @@
+/vendor/*
+./models/db.php
+.db.php
